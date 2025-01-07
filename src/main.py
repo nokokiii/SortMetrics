@@ -11,9 +11,9 @@ ALGOS = {
     "Insertion sort": insertion_sort,
     "Quick sort": quick_sort,
     "Merge sort": merge_sort,
-    "Tim sort": tim_sort,
     "Intro sort": intro_sort,
-    "Sort in python": sorted
+    "Tim sort": tim_sort,
+    "Python": sorted
 }
 
 def calculate_time(data: List[int]) -> List[float]:
@@ -36,26 +36,13 @@ def calculate_time(data: List[int]) -> List[float]:
 
 
 def main() -> None:
-    data_1k = generate_data(1000)
-    data_10k = generate_data(10_000)
-    data_100k = generate_data(100_000)
-
-    sorting_algos = {
-        "Bubble sort": bubble_sort,
-        "Insertion sort": insertion_sort,
-        "Quick sort": quick_sort,
-        "Merge sort": merge_sort,
-        "Tim sort": tim_sort,
-        "Intro sort": intro_sort,
-        "Sort in python": sorted
-    }
-
-    headers = ["Data size", *sorting_algos.keys()]
+    headers = ["Data size", *ALGOS.keys()]
 
     time_data = [
-        ["1k", *calculate_time(data_1k)],
-        ["10k", *calculate_time(data_10k)],
-        ["100k", *calculate_time(data_100k)]
+        ["100", *calculate_time(generate_data(100))],
+        ["1k", *calculate_time(generate_data(1_000))],
+        ["10k", *calculate_time(generate_data(10_000))],
+        ["100k", *calculate_time(generate_data(100_000))]
     ]
 
     print(tabulate(time_data, headers=headers, tablefmt="pretty"))
