@@ -1,4 +1,6 @@
-from typing import List
+from math import ceil, log2
+from random import randrange
+from typing import List, Optional
 
 
 def bubble_sort(arr: List[int]) -> List[int]:
@@ -14,26 +16,28 @@ def bubble_sort(arr: List[int]) -> List[int]:
         for j in range(n - i - 1):
             if arr[j] > arr[j + 1]:
                 arr[j], arr[j + 1] = arr[j + 1], arr[j]
+
     return arr
 
 
-def insertion_sort(arr: List[int]) -> List[int]:
+def insertion_sort(arr: List[int], start: Optional[int] = None, end: Optional[int] = None) -> List[int]:
     """
     Insertion sort algorithm
 
     :param arr: List of integers
-
-    :return: Sorted list of integers
+    :param start: Starting index
+    :param end: Ending index
     """
-    for i in range(1, len(arr)):
-        a = arr[i]
-        j = i - 1
+    start = start or 0
+    end = end or len(arr)
 
-        while j >= 0 and a < arr[j]:
-            arr[j + 1] = arr[j]
-            j -= 1
+    for i in range(start, end):
+        j = arr[i]
+        while i != start and j < arr[i - 1]:
+            arr[i] = arr[i - 1]
+            i -= 1
+        arr[i] = j
 
-        arr[j + 1] = a
     return arr
 
 
@@ -45,13 +49,16 @@ def quick_sort(arr: List[int]) -> List[int]:
 
     :return: Sorted list of integers
     """
-    if len(arr) <= 1:
+    if len(arr) < 2:
         return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quick_sort(left) + middle + quick_sort(right)
+
+    pivot_index = randrange(len(arr))
+    pivot = arr.pop(pivot_index)
+
+    lesser = [item for item in arr if item <= pivot]
+    greater = [item for item in arr if item > pivot]
+
+    return [*quick_sort(lesser), pivot, *quick_sort(greater)]
 
 
 def merge_sort(arr: List[int]) -> List[int]:
@@ -62,94 +69,169 @@ def merge_sort(arr: List[int]) -> List[int]:
 
     :return: Sorted list of integers
     """
-    if len(arr) <= 1:
-        return arr
+    if len(arr) > 1:
+        middle = len(arr) // 2
+        left = arr[:middle]
+        right = arr[middle:]
 
-    def merge(left: List[int], right: List[int]) -> List[int]:
-        result = []
-        i = j = 0
+        merge_sort(left)
+        merge_sort(right)
+
+        i = j = k = 0
         while i < len(left) and j < len(right):
             if left[i] < right[j]:
-                result.append(left[i])
+                arr[k] = left[i]
                 i += 1
             else:
-                result.append(right[j])
+                arr[k] = right[j]
                 j += 1
-        result += left[i:]
-        result += right[j:]
-        return result
+            k += 1
 
-    mid = len(arr) // 2
-    left = merge_sort(arr[:mid])
-    right = merge_sort(arr[mid:])
-    return merge(left, right)
+        while i < len(left):
+            arr[k] = left[i]
+            i += 1
+            k += 1
 
+        while j < len(right):
+            arr[k] = right[j]
+            j += 1
+            k += 1
 
-def tim_sort(arr: List[int]) -> List[int]:
+    return arr
+
+def heap_sort(arr: List[int]) -> List[int]:
     """
-    Tim sort algorithm
+    Heap sort algorithm
 
     :param arr: List of integers
 
     :return: Sorted list of integers
     """
-    def merge(left: List[int], right: List[int]) -> List[int]:
-        result = []
-        i = j = 0
-        while i < len(left) and j < len(right):
-            if left[i] < right[j]:
-                result.append(left[i])
-                i += 1
-            else:
-                result.append(right[j])
-                j += 1
-        result += left[i:]
-        result += right[j:]
-        return result
+    def heapify(arr: List[int], heap_size: int, i: int):
+        largest = i
+        left = 2 * i + 1
+        right = 2 * i + 2
 
-    min_run = 32
+        if left < heap_size and arr[i] < arr[left]:
+            largest = left
+
+        if right < heap_size and arr[largest] < arr[right]:
+            largest = right
+
+        if largest != i:
+            arr[i], arr[largest] = arr[largest], arr[i]
+            heapify(arr, heap_size, largest)
+
     n = len(arr)
 
-    for i in range(0, n, min_run):
-        insertion_sort(arr, i, min(i + min_run - 1, n - 1))
+    for i in range(n//2 - 1, -1, -1):
+        heapify(arr, n, i)
 
-    size = min_run
-    while size < n:
-        for start in range(0, n, size * 2):
-            midpoint = start + size
-            end = min(start + size * 2 - 1, n - 1)
-
-            merged_array = merge(arr[start:midpoint], arr[midpoint:end + 1])
-
-            arr[start:start + len(merged_array)] = merged_array
-
-        size *= 2
+    for i in range(n-1, 0, -1):
+        arr[i], arr[0] = arr[0], arr[i]
+        heapify(arr, i, 0)
 
     return arr
 
 
 def intro_sort(arr: List[int]) -> List[int]:
     """
-    Intro sort algorithm: Combines QuickSort, HeapSort, and InsertionSort
+    Intro sort algorithm
+
+    :param arr: List of integers
+
+    :return: Sorted list of integers
     """
-    import math
-    from heapq import heapify, heappop
-
-    def heapsort(arr):
-        heapify(arr)
-        return [heappop(arr) for _ in range(len(arr))]
-
-    def intro_sort_helper(arr, depth_limit):
-        if len(arr) <= 16:
-            return insertion_sort(arr)
-        elif depth_limit == 0:
-            return heapsort(arr)
+    def median_of_three(arr: list, first: int, middle: int, last: int) -> int:
+        if (arr[first] > arr[middle]) != (arr[first] > arr[last]):
+            return arr[first]
+        elif (arr[middle] > arr[first]) != (arr[middle] > arr[last]):
+            return arr[middle]
         else:
-            pivot = arr[len(arr) // 2]
-            left = [x for x in arr if x < pivot]
-            middle = [x for x in arr if x == pivot]
-            right = [x for x in arr if x > pivot]
-            return intro_sort_helper(left, depth_limit - 1) + middle + intro_sort_helper(right, depth_limit - 1)
+            return arr[last]
 
-    max_depth = int(math.log2(len(arr))) * 2
-    return intro_sort_helper(arr, max_depth)
+    def partition(array: list, low: int, high: int, pivot: int) -> int:
+        i = low
+        j = high
+        while True:
+            while array[i] < pivot:
+                i += 1
+            j -= 1
+            while pivot < array[j]:
+                j -= 1
+            if i >= j:
+                return i
+            array[i], array[j] = array[j], array[i]
+            i += 1
+
+    def intro_sort_helper(arr: List[int], start: int, end: int, size_threshold: int, max_depth: int) -> List[int]:
+        while end - start > size_threshold:
+            if max_depth == 0:
+                return heap_sort(arr[start:end])
+            max_depth -= 1
+            pivot = median_of_three(arr, start, start + ((end - start) // 2) + 1, end - 1)
+            p = partition(arr, start, end, pivot)
+            arr = intro_sort_helper(arr, p, end, size_threshold, max_depth)
+            end = p
+        return insertion_sort(arr, start, end)
+
+    if len(arr) <= 1:
+        return arr
+
+    max_depth = 2 * ceil(log2(len(arr)))
+    return intro_sort_helper(arr, 0, len(arr), 16, max_depth)
+
+
+def tim_sort(arr: List[int]) -> List[int]:
+    """
+    Tim sort algorithm
+
+    :param arr: Unsorted list
+
+    :return: Sorted list of integers
+    """
+    def binary_search(arr, item, start, end):
+        if start == end:
+            return start if arr[start] > item else start + 1
+        if start > end:
+            return start
+
+        mid = (start + end) // 2
+        if arr[mid] < item:
+            return binary_search(arr, item, mid + 1, end)
+        elif arr[mid] > item:
+            return binary_search(arr, item, start, mid - 1)
+        else:
+            return mid
+
+    def merge(left, right):
+        if not left:
+            return right
+        if not right:
+            return left
+
+        if left[0] < right[0]:
+            return [left[0], *merge(left[1:], right)]
+
+        return [right[0], *merge(left, right[1:])]
+
+    length = len(arr)
+    runs, sorted_runs = [], []
+    new_run = [arr[0]]
+    sorted_array = []
+    i = 1
+    while i < length:
+        if arr[i] < arr[i - 1]:
+            runs.append(new_run)
+            new_run = [arr[i]]
+        else:
+            new_run.append(arr[i])
+        i += 1
+    runs.append(new_run)
+
+    for run in runs:
+        sorted_runs.append(insertion_sort(run))
+    for run in sorted_runs:
+        sorted_array = merge(sorted_array, run)
+
+    return sorted_array
