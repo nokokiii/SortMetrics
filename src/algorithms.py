@@ -2,6 +2,7 @@ from math import ceil, log2
 from random import randrange
 from typing import List, Optional
 
+from threading import Thread
 
 def bubble_sort(arr: List[int]) -> List[int]:
     """
@@ -235,3 +236,36 @@ def tim_sort(arr: List[int]) -> List[int]:
         sorted_array = merge(sorted_array, run)
 
     return sorted_array
+
+
+import numpy as np
+
+_MAX_RECURSION_DEPTH = 140
+
+def thread_quick_sort(arr: List[int], depth: int = 0) -> List[int]:
+    """
+    Quick sort algorithm
+
+    :param arr: List of integers
+
+    :return: Sorted list of integers
+    """
+    if len(arr) < 2:
+        return arr
+
+    pivot_index = randrange(len(arr))
+    pivot = arr.pop(pivot_index)
+
+    lesser = [item for item in arr if item <= pivot]
+    greater = [item for item in arr if item > pivot]
+
+    if depth > _MAX_RECURSION_DEPTH:
+        return [*thread_quick_sort(lesser, depth + 1), pivot, *thread_quick_sort(greater, depth + 1)]
+    else:
+        t1 = Thread(target=thread_quick_sort, args=(lesser, depth + 1))
+        t2 = Thread(target=thread_quick_sort, args=(greater, depth + 1))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        return [*lesser, pivot, *greater]
